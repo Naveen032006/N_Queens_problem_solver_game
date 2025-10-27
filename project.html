@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Interactive N-Queens — Play, Auto-Solve, Hint</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#0f1724; --bg2:#0b3142; --accent:#ffb86b; --muted:#94a3b8;
+    --card:#0f1728; --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:'Poppins',system-ui,Arial;background:linear-gradient(150deg,var(--bg1),var(--bg2));color:#e6eef8;display:flex;flex-direction:column;align-items:center;padding:28px}
+  .app{width:100%;max-width:1100px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  h1{font-size:20px;margin:0;color:var(--accent)}
+  .controls{display:flex;gap:8px;align-items:center}
+  .controls input[type=number]{width:80px;padding:8px;border-radius:10px;border:none;background:var(--card);color:inherit;font-weight:600}
+  .btn{background:linear-gradient(90deg,var(--accent),#ff7a5c);border:none;padding:8px 12px;border-radius:10px;color:#081223;font-weight:700;cursor:pointer}
+  .btn.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.06)}
+  .layout{display:grid;grid-template-columns: 1fr 360px;gap:20px}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  .board-wrap{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:14px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+  #board{display:grid;gap:4px;border-radius:10px}
+  .cell{width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:24px;user-select:none;border-radius:8px;cursor:pointer;transition:transform .12s, box-shadow .12s}
+  .cell:hover{transform:translateY(-4px)}
+  .cell.light{background:#f2f4f8;color:#0b1220}
+  .cell.dark{background:#0b1220;color:#f2f4f8}
+  .cell.queen{font-size:26px;color:var(--accent);text-shadow:0 4px 16px rgba(255,184,107,0.18)}
+  .cell.conflict{outline:3px solid rgba(255,90,90,0.85);box-shadow:0 8px 30px rgba(255,80,80,0.12)}
+  .cell.hint{box-shadow: inset 0 0 0 4px rgba(99,210,255,0.12);}
+
+  .sidebar{padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;height:100%}
+  .panel{background:var(--glass);padding:12px;border-radius:10px;margin-bottom:12px}
+  .panel h3{margin:0 0 8px 0;font-size:14px;color:var(--accent)}
+  .stats{display:flex;gap:8px;flex-wrap:wrap}
+  .stat{min-width:calc(50% - 8px);background:transparent;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+  .stat strong{display:block;font-size:18px;color:#fff}
+  .solutions-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:260px;overflow:auto;padding:6px}
+  .mini-board{display:grid;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
+  .mini-cell{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px}
+
+  .footer{margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:center}
+
+  /* celebration overlay */
+  #celebrate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60}
+  #celebrate .panel{background:linear-gradient(90deg,#111827,#0b1220);padding:26px;border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.6);text-align:center}
+  #celebrate h2{color:var(--accent);margin:0 0 8px 0}
+  canvas#confetti{position:fixed;left:0;top:0;pointer-events:none;z-index:55}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Interactive N‑Queens — Play & Solve</h1>
+      <div class="controls">
+        <label for="nInput" style="color:var(--muted);margin-right:6px">N</label>
+        <input id="nInput" type="number" min="4" max="12" value="8">
+        <button class="btn" id="newBtn">New</button>
+        <button class="btn secondary" id="resetBtn">Reset</button>
+        <button class="btn" id="autoBtn">Auto Solve</button>
+        <button class="btn" id="hintBtn">Hint</button>
+        <button class="btn secondary" id="checkBtn">Check Board</button>
+        <button class="btn" id="showAllBtn">Show All Solutions</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="board-wrap">
+        <div id="board" aria-label="Chess board"></div>
+        <div class="footer" style="justify-content:center;margin-top:12px">
+          <small style="color:var(--muted)">Click cells to place/remove queens. Conflicts shown only after 'Check Board'.</small>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <div class="panel">
+          <h3>Game stats</h3>
+          <div class="stats">
+            <div class="stat">Attempts<br><strong id="attempts">0</strong></div>
+            <div class="stat">Conflicts<br><strong id="conflicts">0</strong></div>
+            <div class="stat">Solutions Found<br><strong id="solutionsFound">0</strong></div>
+            <div class="stat">Possible Solutions<br><strong id="totalSolutions">0</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>All solutions</h3>
+          <div class="solutions-grid" id="solutionsGrid"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- celebration overlay + confetti canvas -->
+  <div id="celebrate"><div class="panel"><h2>🎉 Well done! 🎉</h2><div id="celebrateMsg">You solved the puzzle.</div></div></div>
+  <canvas id="confetti"></canvas>
+
+<script>
+// --- state ---
+let N = 8;
+let board = []; // board[row] = col or -1
+let attempts = 0;
+let conflicts = 0;
+let solutions = [];
+let showAll = false;
+const boardEl = document.getElementById('board');
+const nInput = document.getElementById('nInput');
+const attemptsEl = document.getElementById('attempts');
+const conflictsEl = document.getElementById('conflicts');
+const solutionsFoundEl = document.getElementById('solutionsFound');
+const totalSolutionsEl = document.getElementById('totalSolutions');
+const solutionsGrid = document.getElementById('solutionsGrid');
+
+// initialize
+function resetState(n){ N = n; board = Array(N).fill(-1); attempts = 0; conflicts = 0; solutions = []; updateStats(); }
+
+function renderBoard(highlightConflicts = false, hintPos = null){
+  boardEl.innerHTML = '';
+  boardEl.style.gridTemplateColumns = `repeat(${N}, 60px)`;
+  for(let r=0;r<N;r++){
+    for(let c=0;c<N;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + (((r+c)%2===0)?'light':'dark');
+      cell.dataset.r = r; cell.dataset.c = c;
+      if(board[r] === c){ cell.classList.add('queen'); cell.textContent = '♛'; }
+      if(highlightConflicts && isCellConflict(r,c)) cell.classList.add('conflict');
+      if(hintPos && hintPos.r===r && hintPos.c===c) cell.classList.add('hint');
+      cell.addEventListener('click', onCellClick);
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function onCellClick(e){
+  const r = +e.currentTarget.dataset.r;
+  const c = +e.currentTarget.dataset.c;
+  // toggle queen on that row: if that row already has queen at c -> remove, else place at c
+  if(board[r] === c){ board[r] = -1; }
+  else { board[r] = c; attempts++; }
+  // silent mode: conflicts not shown until Check Board
+  renderBoard(false);
+  updateStats();
+  // if board is complete and no conflicts -> celebrate
+  if(isComplete() && countConflicts() === 0){ celebrate('You solved the puzzle!'); }
+}
+
+function isComplete(){ return board.every(c => c >=0); }
+
+function isCellConflict(r,c){
+  // only meaningful if a queen exists at r,c
+  if(board[r] !== c) return false;
+  for(let i=0;i<N;i++){
+    if(i===r) continue;
+    const oc = board[i];
+    if(oc === -1) continue;
+    if(oc === c || Math.abs(oc - c) === Math.abs(i - r)) return true;
+  }
+  return false;
+}
+
+function countConflicts(){
+  let set = new Set();
+  for(let i=0;i<N;i++){
+    for(let j=i+1;j<N;j++){
+      if(board[i]===-1 || board[j]===-1) continue;
+      if(board[i] === board[j] || Math.abs(board[i]-board[j]) === Math.abs(i-j)){
+        set.add(i); set.add(j);
+      }
+    }
+  }
+  return set.size;
+}
+
+// check board button
+function checkBoard(){
+  conflicts = countConflicts();
+  renderBoard(true);
+  updateStats();
+  if(isComplete() && conflicts === 0) celebrate('Perfect! Puzzle solved.');
+}
+
+// backtracking: find all solutions
+function findAllSolutions(){
+  solutions = [];
+  let temp = Array(N).fill(-1);
+  function safe(row,col){
+    for(let r=0;r<row;r++){
+      const c = temp[r];
+      if(c===col || Math.abs(c-col)===Math.abs(r-row)) return false;
+    }
+    return true;
+  }
+  function solve(row){
+    if(row===N){ solutions.push([...temp]); return; }
+    for(let col=0;col<N;col++){
+      attempts++;
+      if(safe(row,col)){
+        temp[row]=col; solve(row+1); temp[row]=-1;
+      }
+    }
+  }
+  solve(0);
+}
+
+// auto solve: compute all then show first
+function autoSolve(){
+  attempts = 0; conflicts = 0; solutions = [];
+  findAllSolutions();
+  if(solutions.length>0){ board = [...solutions[0]]; renderBoard(false); updateStats(); celebrate(`${solutions.length} solution(s) found — showing 1st.`); }
+  else { alert('No solutions for N = '+N); }
+}
+
+// hint: find a safe placement for the first incomplete row
+function getHint(){
+  // find first row without queen
+  const row = board.findIndex(c => c === -1);
+  if(row === -1){ alert('Board already full'); return; }
+  // try columns - prefer safe relative to current placed queens
+  for(let col=0;col<N;col++){
+    if(isSafeRelative(row,col)){
+      renderBoard(false,{r:row,c:col});
+      // briefly show hint highlight
+      setTimeout(()=>renderBoard(false),1500);
+      return;
+    }
+  }
+  alert('No safe spot available for next row with current placements.');
+}
+
+function isSafeRelative(row,col){
+  for(let r=0;r<N;r++){
+    if(board[r] === -1) continue;
+    const c = board[r];
+    if(c === col || Math.abs(c-col) === Math.abs(r-row)) return false;
+  }
+  return true;
+}
+
+function showAllSolutions(){
+  if(solutions.length === 0){ findAllSolutions(); }
+  solutionsGrid.innerHTML = '';
+  solutions.forEach(sol => {
+    const mini = document.createElement('div');
+    mini.className = 'mini-board';
+    mini.style.gridTemplateColumns = `repeat(${N}, 20px)`;
+    mini.style.gap = '1px';
+    sol.forEach((col, r) => {
+      for(let c=0;c<N;c++){
+        const mc = document.createElement('div');
+        mc.className = 'mini-cell ' + ((r+c)%2===0 ? 'white' : 'dark');
+        if(col===c){ mc.style.background = '#ffb86b'; mc.textContent = '♛'; mc.style.fontSize='12px'; }
+        mini.appendChild(mc);
+      }
+    });
+    mini.addEventListener('click', ()=>{ board = [...sol]; renderBoard(false); updateStats(); });
+    solutionsGrid.appendChild(mini);
+  });
+}
+
+// reset/clear board
+function resetBoard(){ board = Array(N).fill(-1); attempts = 0; conflicts = 0; renderBoard(false); updateStats(); }
+
+// helper update stats
+function updateStats(){ attemptsEl.textContent = attempts; conflictsEl.textContent = conflicts; solutionsFoundEl.textContent = solutions.length; totalSolutionsEl.textContent = solutions.length; }
+
+// celebration
+function celebrate(msg){
+  const overlay = document.getElementById('celebrate');
+  const msgEl = document.getElementById('celebrateMsg');
+  msgEl.textContent = msg;
+  overlay.style.display = 'flex';
+  startConfetti();
+  setTimeout(()=>{ overlay.style.display='none'; stopConfetti(); }, 3800);
+}
+
+// confetti canvas simple implementation
+let confettiTimer = null;
+function startConfetti(){
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  const pieces = Array.from({length:140}, () => ({x:Math.random()*canvas.width,y:Math.random()*-canvas.height,r:Math.random()*6+2,color:`hsl(${Math.random()*360},80%,60%)`,vx:(Math.random()-0.5)*1.2,vy:Math.random()*4+2,rot:Math.random()*360}));
+  function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); pieces.forEach(p=>{ p.x += p.vx; p.y += p.vy; p.rot += 6; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle = p.color; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6); ctx.restore(); if(p.y>canvas.height+20) p.y=-20; if(p.x>canvas.width+40) p.x=-40; }); }
+  confettiTimer = setInterval(draw, 16);
+}
+function stopConfetti(){ clearInterval(confettiTimer); confettiTimer = null; const canvas = document.getElementById('confetti'); const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+
+// wire buttons
+document.getElementById('newBtn').addEventListener('click', ()=>{
+  const n = parseInt(nInput.value) || 8; N = n; resetState(n); renderBoard(false); solutionsGrid.innerHTML='';
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{ resetBoard(); });
+document.getElementById('autoBtn').addEventListener('click', ()=>{ autoSolve(); showAll = false; });
+document.getElementById('hintBtn').addEventListener('click', ()=>{ getHint(); });
+document.getElementById('checkBtn').addEventListener('click', ()=>{ checkBoard(); });
+document.getElementById('showAllBtn').addEventListener('click', ()=>{ findAllSolutions(); showAllSolutions(); });
+
+// initial load
+resetState(parseInt(nInput.value)); renderBoard(false);
+</script>
+</body>
+</html>
