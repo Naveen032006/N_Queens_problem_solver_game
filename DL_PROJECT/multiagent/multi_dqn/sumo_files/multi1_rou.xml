@@ -1,0 +1,47 @@
+<routes>
+
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5"
+           length="5" maxSpeed="13.9"
+           lcStrategic="1.0" lcSpeedGain="1.0" lcCooperative="1.0"/>
+
+    <!-- From E16 -->
+    <flow id="f_E16_1" type="car" begin="0" end="3600" probability="0.02" from="E16" to="-E18"/>
+    <flow id="f_E16_2" type="car" begin="0" end="3600" probability="0.02" from="E16" to="-E20"/>
+    <flow id="f_E16_3" type="car" begin="0" end="3600" probability="0.02" from="E16" to="-E22"/>
+
+    <!-- From E17 -->
+    <flow id="f_E17_1" type="car" begin="0" end="3600" probability="0.02" from="E17" to="-E19"/>
+    <flow id="f_E17_2" type="car" begin="0" end="3600" probability="0.02" from="E17" to="-E21"/>
+    <flow id="f_E17_3" type="car" begin="0" end="3600" probability="0.02" from="E17" to="-E23"/>
+
+    <!-- From E18 -->
+    <flow id="f_E18_1" type="car" begin="0" end="3600" probability="0.02" from="E18" to="-E16"/>
+    <flow id="f_E18_2" type="car" begin="0" end="3600" probability="0.02" from="E18" to="-E20"/>
+    <flow id="f_E18_3" type="car" begin="0" end="3600" probability="0.02" from="E18" to="-E22"/>
+
+    <!-- From E19 -->
+    <flow id="f_E19_1" type="car" begin="0" end="3600" probability="0.02" from="E19" to="-E17"/>
+    <flow id="f_E19_2" type="car" begin="0" end="3600" probability="0.02" from="E19" to="-E21"/>
+    <flow id="f_E19_3" type="car" begin="0" end="3600" probability="0.02" from="E19" to="-E23"/>
+
+    <!-- From E20 -->
+    <flow id="f_E20_1" type="car" begin="0" end="3600" probability="0.02" from="E20" to="-E16"/>
+    <flow id="f_E20_2" type="car" begin="0" end="3600" probability="0.02" from="E20" to="-E18"/>
+    <flow id="f_E20_3" type="car" begin="0" end="3600" probability="0.02" from="E20" to="-E22"/>
+
+    <!-- From E21 -->
+    <flow id="f_E21_1" type="car" begin="0" end="3600" probability="0.02" from="E21" to="-E17"/>
+    <flow id="f_E21_2" type="car" begin="0" end="3600" probability="0.02" from="E21" to="-E19"/>
+    <flow id="f_E21_3" type="car" begin="0" end="3600" probability="0.02" from="E21" to="-E23"/>
+
+    <!-- From E22 -->
+    <flow id="f_E22_1" type="car" begin="0" end="3600" probability="0.02" from="E22" to="-E16"/>
+    <flow id="f_E22_2" type="car" begin="0" end="3600" probability="0.02" from="E22" to="-E18"/>
+    <flow id="f_E22_3" type="car" begin="0" end="3600" probability="0.02" from="E22" to="-E20"/>
+
+    <!-- From E23 -->
+    <flow id="f_E23_1" type="car" begin="0" end="3600" probability="0.02" from="E23" to="-E17"/>
+    <flow id="f_E23_2" type="car" begin="0" end="3600" probability="0.02" from="E23" to="-E19"/>
+    <flow id="f_E23_3" type="car" begin="0" end="3600" probability="0.02" from="E23" to="-E21"/>
+
+</routes>

@@ -1,0 +1,25 @@
+<configuration>
+    <input>
+        <net-file value="multi1.net.xml"/>
+        <route-files value="multi1_rou.xml"/>
+       
+    </input>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="1"/>
+    </time>
+
+    <processing>
+        <!-- Prevent wrong lane issues -->
+        <routing-algorithm value="dijkstra"/>
+
+        <!-- Prevent early teleport -->
+        <time-to-teleport value="300"/>
+    </processing>
+
+    <report>
+        <verbose value="true"/>
+    </report>
+</configuration>
